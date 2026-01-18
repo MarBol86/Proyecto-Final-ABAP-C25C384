@@ -3,7 +3,7 @@
 @Metadata.ignorePropagatedAnnotations: true
 define root view entity Z_R_INCIDENTS_MB
   as select from zdt_inct_mb
-  //composition of target_data_source_name as _association_name
+  composition [0..*]  of Z_R_HISTORY_MB as _History
   association [1..1] to ZDD_STATUS_MB_VH   as _Status   on _Status.status_code = $projection.Status
   association [1..1] to ZDD_PRIORITY_MB_VH as _Priority on _Priority.priority_code = $projection.Priority
 {
@@ -32,5 +32,6 @@ define root view entity Z_R_INCIDENTS_MB
 
       //    _association_name // Make association public
       _Status,
-      _Priority
+      _Priority,
+      _History
 }
