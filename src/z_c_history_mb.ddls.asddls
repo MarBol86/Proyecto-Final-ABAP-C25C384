@@ -4,7 +4,7 @@
 @Metadata.allowExtensions: true
 @ObjectModel.semanticKey:[ 'HisId' ]
 define view entity Z_C_HISTORY_MB
-  as projection on z_R_history_mB
+  as projection on Z_R_HISTORY_MB
 {
   key HisUUID,
       IncUUID,
@@ -12,9 +12,6 @@ define view entity Z_C_HISTORY_MB
       PreviousStatus,
       NewStatus,
       Text,
-      LocalCreatedBy,
-      LocalCreatedAt,
-      LocalLastChangedBy,
       LocalLastChangedAt,
       LastChangedAt,
       /* Associations */

@@ -1,0 +1,87 @@
+@Metadata.layer: #CORE
+@UI.presentationVariant: [{
+    sortOrder: [{
+        by: 'IncidentId', //Orden de cómo vemos los datos
+        direction: #ASC  //Con clasificación ascendente
+    }],
+    visualizations: [{
+        type: #AS_LINEITEM //Como vemos los datos
+    }] }]
+
+@UI.headerInfo: {
+    typeName: 'Incident',             //Nombre en singular para 1 registro
+    typeNamePlural: 'Incidents',
+  title: {
+        type: #STANDARD,
+        criticalityRepresentation: #WITHOUT_ICON,
+        value: 'IncidentId'
+    } }
+
+annotate entity Z_C_INCIDENTS_MB with
+{
+  @UI.facet: [{
+      id: 'IncidentMasterData',
+      purpose: #STANDARD,
+      type: #IDENTIFICATION_REFERENCE
+  }]
+
+  @UI.lineItem: [{ importance: #HIGH },
+                   { type: #FOR_ACTION ,
+                   label: 'Change Status',
+                   dataAction: 'changeStatus' }
+                     ]
+  @UI.identification: [{ type: #FOR_ACTION ,
+                         label: 'Change Status',
+                         dataAction: 'changeStatus' }]
+  @UI.hidden: true
+  IncUUID;
+
+  @UI: { lineItem: [{ position: 20,
+                      importance: #MEDIUM }],
+         selectionField: [{ position: 20 }],
+         identification: [{ position: 20 }] }
+  IncidentId;
+
+  @UI: { lineItem: [{ position: 30,
+                      importance: #LOW }],
+         selectionField: [{ exclude: true }], //Sin filtros de búsqueda
+         identification: [{ position: 30 }] }
+  Title;
+
+  @UI: { lineItem: [{ position: 40,
+                      importance: #LOW }],
+         selectionField: [{ position: 40 }],
+         identification: [{ position: 40 }] }
+  Description;
+
+  @UI: { lineItem: [{position: 50,
+                     importance: #LOW }],
+         selectionField: [{ position: 50 }],
+         identification: [{ position: 50 }] }
+  Status;
+
+  @UI: { lineItem: [{position: 60,
+                     importance: #LOW }],
+         selectionField: [{ position: 60 }],
+         identification: [{ position: 60 }] }
+  Priority;
+
+  @UI: { lineItem: [{position: 70,
+                     importance: #LOW }],
+         selectionField: [{ position: 70 }],
+         identification: [{ position: 70 }] }
+  CreationDate;
+
+
+  @UI: { lineItem: [{position: 80,
+                     importance: #LOW }],
+         selectionField: [{ position: 80 }],
+         identification: [{ position: 80 }] }
+  ChangedDate;
+
+  @UI.hidden: true
+  LocalLastChangedAt;
+
+  @UI.hidden: true
+  LastChangedAt;
+}

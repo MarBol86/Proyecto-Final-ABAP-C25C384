@@ -1,0 +1,65 @@
+@Metadata.layer: #CORE
+@UI.presentationVariant: [{
+    sortOrder: [{
+        by: 'HisUUID',
+        direction: #ASC
+    }],
+    visualizations: [{
+        type: #AS_LINEITEM //Como vemos los datos
+    }] }]
+
+@UI.headerInfo: {
+    typeName: 'History',
+    typeNamePlural: 'Incidents',
+  title: {
+        type: #STANDARD,
+        criticalityRepresentation: #WITHOUT_ICON,
+        value: 'HisUUID'
+    } }
+@UI.createHidden: true
+annotate entity Z_C_HISTORY_MB with
+{
+  @UI.facet: [{
+      id: 'IncidentMasterData',
+      purpose: #STANDARD,
+      type: #LINEITEM_REFERENCE
+  }]
+  @UI.lineItem: [{ importance: #HIGH }]
+  @UI.hidden: true
+  HisUUID;
+  @UI.lineItem: [{ importance: #HIGH }]
+  @UI.hidden: true
+  IncUUID;
+
+  @UI: { lineItem: [{ position: 20,
+                      importance: #MEDIUM }],
+         selectionField: [{ position: 20 }],
+         identification: [{ position: 20 }] }
+  HisId;
+
+  @UI: { lineItem: [{ position: 30,
+                      importance: #LOW }],
+         selectionField: [{ position: 30 }],
+         identification: [{ position: 30 }] }
+  PreviousStatus;
+
+  @UI: { lineItem: [{ position: 40,
+                      importance: #LOW }],
+         selectionField: [{ position: 40 }],
+         identification: [{ position: 40 }] }
+  NewStatus;
+  @UI: { lineItem: [{ position: 50,
+                      importance: #LOW }],
+         selectionField: [{ position: 50 }],
+         identification: [{ position: 50 }] }
+  Text;
+
+  @UI.hidden: true
+  LocalLastChangedAt;
+
+  @UI.hidden: true
+  LastChangedAt;
+
+  @UI.hidden: true
+  _Incidents;
+}
