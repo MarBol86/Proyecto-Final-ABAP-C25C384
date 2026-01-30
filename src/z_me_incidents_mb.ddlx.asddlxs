@@ -19,19 +19,20 @@
 
 annotate entity Z_C_INCIDENTS_MB with
 {
-  @UI.facet: [{
-      id: 'IncidentMasterData',
-      purpose: #STANDARD,
-      type: #IDENTIFICATION_REFERENCE },
-       {
-    id: 'IncidentHistory',
-    purpose: #STANDARD,
-    type: #LINEITEM_REFERENCE,
-    label: 'History',
-    position: 20,
-    targetElement: '_History'
 
-  }]
+  @UI.facet: [{ id:            'Incident',
+                purpose:       #STANDARD,
+                type:          #IDENTIFICATION_REFERENCE,
+                label:         'Incident',
+                position:      10 },
+              { id:            'History',
+                purpose:       #STANDARD,
+                type:          #LINEITEM_REFERENCE,
+                label:         'History',
+                position:      20,
+                targetElement: '_History'}]
+
+
 
   @UI.lineItem: [{ importance: #HIGH },
                    { type: #FOR_ACTION ,
@@ -108,4 +109,5 @@ annotate entity Z_C_INCIDENTS_MB with
 
   @UI.hidden: true
   LastChangedAt;
+
 }

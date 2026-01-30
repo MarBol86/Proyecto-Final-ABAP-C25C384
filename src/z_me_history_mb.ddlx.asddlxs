@@ -13,8 +13,8 @@
     typeNamePlural: 'Histories',
   title: {
         type: #STANDARD,
-//        criticalityRepresentation: #WITHOUT_ICON,
-        value: 'HisUUID'
+        label: 'History',
+        value: 'HisID'
     } }
 @UI.createHidden: true
 annotate entity Z_C_HISTORY_MB with
@@ -65,6 +65,4 @@ annotate entity Z_C_HISTORY_MB with
   @UI.hidden: true
   LastChangedAt;
 
-  @UI.hidden: true
-  _Incidents;
 }

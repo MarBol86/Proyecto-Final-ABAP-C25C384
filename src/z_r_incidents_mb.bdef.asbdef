@@ -29,7 +29,7 @@ authorization master ( global, instance )
   determination createHistory on save { create; }
   determination setvalues on modify { create; }
 
-  determine action validateMandatoryFields { validation validateMandatory;}
+  determine action validateMandatoryFields { validation validateMandatory; }
 
   side effects
   {

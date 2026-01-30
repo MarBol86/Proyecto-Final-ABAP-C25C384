@@ -47,6 +47,15 @@ CLASS zcm_incidents_mb DEFINITION
                  attr4 TYPE scx_attrname VALUE '',
                END OF invalid_priority.
 
+    CONSTANTS: BEGIN OF invalid_status,
+                 mysid TYPE symsgid VALUE gc_msgid,
+                 msgno TYPE symsgno VALUE '005',
+                 attr1 TYPE scx_attrname VALUE '',
+                 attr2 TYPE scx_attrname VALUE '',
+                 attr3 TYPE scx_attrname VALUE '',
+                 attr4 TYPE scx_attrname VALUE '',
+               END OF invalid_status.
+
     METHODS constructor
       IMPORTING
         textid   TYPE scx_t100key OPTIONAL

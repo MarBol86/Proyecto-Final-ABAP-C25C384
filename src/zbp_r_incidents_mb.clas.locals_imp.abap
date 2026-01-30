@@ -42,6 +42,37 @@ ENDCLASS.
 CLASS lhc_Incidents IMPLEMENTATION.
 
   METHOD get_instance_features.
+
+    "Read Entity
+    READ ENTITIES OF z_r_incidents_mb IN LOCAL MODE
+    ENTITY Incidents
+    FIELDS ( IncidentId CreationDate Status )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(incidents)
+    FAILED failed.
+
+    "                                                "Puede ser creación o modificación
+*    DELETE incidents WHERE IncidentId IS INITIAL OR %is_draft EQ if_abap_behv=>mk-off.
+
+    CHECK incidents IS NOT INITIAL.
+
+    SELECT FROM zdt_inct_mb AS ddbb
+    INNER JOIN @incidents AS http_req ON ddbb~incident_id = http_req~IncidentId
+    FIELDS ddbb~incident_id
+    INTO TABLE @DATA(valid_ids).
+
+    result = VALUE #( FOR incident IN incidents (
+                                         %tky = incident-%tky
+                                         %action-changeStatus = COND #( WHEN NOT line_exists( valid_ids[ incident_id = incident-IncidentId ] ) "Se chequea existencia DB
+                                                                        OR incident-status = mcs_status-canceled
+                                                                        OR incident-status = mcs_status-completed
+                                                                        OR incident-status = mcs_status-closed
+                                                                        THEN if_abap_behv=>fc-o-disabled
+                                                                        ELSE if_abap_behv=>fc-o-enabled  )
+    ) ) .
+
+
+
   ENDMETHOD.
 
   METHOD get_instance_authorizations.
@@ -51,6 +82,93 @@ CLASS lhc_Incidents IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD changeStatus.
+
+    DATA: history_for_create  TYPE TABLE FOR CREATE z_r_incidents_mb\_History,
+          incident_for_update TYPE TABLE FOR UPDATE z_r_incidents_mb.
+
+    "Read parent record
+    READ ENTITIES OF z_r_incidents_mb IN LOCAL MODE
+    ENTITY Incidents
+    FIELDS ( IncUUID Status )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(incidents).
+
+    LOOP AT incidents INTO DATA(incident).
+
+      "Obtenemos parámetros de la entidad abstracta
+      DATA(new_status) = keys[ KEY id %tky = incident-%tky ]-%param-newstatus.
+      DATA(new_text)   = keys[ KEY id %tky = incident-%tky ]-%param-newtext.
+
+
+      "Si el estado es PE no es posible modificarlo a CO o CL
+      IF incident-Status = mcs_status-pending AND
+      ( new_status =  mcs_status-completed OR new_status =  mcs_status-closed ).
+        DATA(lv_error) = abap_true.
+        "Bloqueamos la acción
+        APPEND VALUE #( %tky = incident-%tky ) TO failed-incidents.
+        "Mensaje
+        APPEND VALUE #( %tky = incident-%tky
+                        %msg = NEW /dmo/cm_flight_messages( textid = zcm_incidents_mb=>invalid_status
+                                                                   severity = if_abap_behv_message=>severity-error )
+                        %op-%action-changeStatus = if_abap_behv=>mk-on
+                                                                    ) TO reported-incidents .
+
+      ENDIF.
+
+      " Get History ID
+      SELECT SINGLE FROM zdt_inct_h_mb
+      FIELDS MAX( his_id )
+      WHERE  inc_uuid = @incident-IncUUID
+      INTO @DATA(lv_max_his_id).
+
+
+      APPEND VALUE #(
+                   %tky = incident-%tky
+                   %target  = VALUE #( ( %cid           = |HIST_{ sy-tabix }|
+                                         incuuid        = incident-IncUUID
+                                         hisid          = lv_max_his_id + 1
+                                         previousstatus = incident-Status
+                                         newstatus      = new_status
+                                         text           = new_text  ) )
+                                     ) TO history_for_create.
+
+      APPEND VALUE #( %tky = incident-%tky
+                     status = new_status
+                     changeddate = cl_abap_context_info=>get_system_date(  ) ) TO incident_for_update.
+
+
+
+    ENDLOOP.
+
+    CHECK lv_error IS INITIAL.
+
+    "Actualiza DB
+    MODIFY ENTITIES OF z_r_incidents_mb IN LOCAL MODE
+    ENTITY Incidents
+    UPDATE FIELDS ( Status ChangedDate )
+    WITH incident_for_update.
+
+    MODIFY ENTITIES OF z_r_incidents_mb IN LOCAL MODE
+    ENTITY Incidents
+    CREATE BY \_History
+    FIELDS ( incuuid hisid previousstatus newstatus text )
+    WITH history_for_create
+    MAPPED mapped
+    REPORTED DATA(ls_reported)
+    FAILED failed .
+
+
+    "Informamos los cambios
+    READ ENTITIES OF z_r_incidents_mb IN LOCAL MODE
+     ENTITY Incidents
+     ALL FIELDS
+     WITH CORRESPONDING #( keys )
+     RESULT DATA(incidents_new_status).
+
+    result = VALUE #( FOR incident_new IN incidents_new_status ( %tky =  incident_new-%tky
+                                                                 %param = incident_new ) ) .
+
+
   ENDMETHOD.
 
   METHOD setvalues.
@@ -113,17 +231,17 @@ CLASS lhc_Incidents IMPLEMENTATION.
                                          text = 'First Incident'  ) )
                                      ) TO history_for_create.
 
-      "No se hace MODIFY ENTITIES sobre la entidad hija directamente
-      "Siempre se crea el hijo a través del padre usando el CREATE BY _Hijo
-      MODIFY ENTITIES OF z_r_incidents_mb IN LOCAL MODE
-      ENTITY Incidents
-        CREATE BY \_History
-        FIELDS ( incuuid hisid previousstatus newstatus text ) WITH history_for_create
-      MAPPED DATA(ls_mapped)
-      REPORTED DATA(ls_reported)
-      FAILED DATA(ls_failed).
-
     ENDLOOP.
+
+    "No se hace MODIFY ENTITIES sobre la entidad hija directamente
+    "Siempre se crea el hijo a través del padre usando el CREATE BY _Hijo
+    MODIFY ENTITIES OF z_r_incidents_mb IN LOCAL MODE
+    ENTITY Incidents
+      CREATE BY \_History
+      FIELDS ( incuuid hisid previousstatus newstatus text ) WITH history_for_create
+    MAPPED DATA(ls_mapped)
+    REPORTED DATA(ls_reported)
+    FAILED DATA(ls_failed).
 
   ENDMETHOD.
 
