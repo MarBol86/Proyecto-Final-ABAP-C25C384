@@ -36,6 +36,10 @@ CLASS lhc_Incidents DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys FOR Incidents~createHistory.
     METHODS validateMandatory FOR VALIDATE ON SAVE
       IMPORTING keys FOR Incidents~validateMandatory.
+    METHODS validateDates FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Incidents~validateDates.
+
+
 
 ENDCLASS.
 
@@ -50,9 +54,6 @@ CLASS lhc_Incidents IMPLEMENTATION.
     WITH CORRESPONDING #( keys )
     RESULT DATA(incidents)
     FAILED failed.
-
-    "                                                "Puede ser creación o modificación
-*    DELETE incidents WHERE IncidentId IS INITIAL OR %is_draft EQ if_abap_behv=>mk-off.
 
     CHECK incidents IS NOT INITIAL.
 
@@ -76,6 +77,8 @@ CLASS lhc_Incidents IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_instance_authorizations.
+
+
   ENDMETHOD.
 
   METHOD get_global_authorizations.
@@ -84,16 +87,19 @@ CLASS lhc_Incidents IMPLEMENTATION.
   METHOD changeStatus.
 
     DATA: history_for_create  TYPE TABLE FOR CREATE z_r_incidents_mb\_History,
-          incident_for_update TYPE TABLE FOR UPDATE z_r_incidents_mb.
+          incident_for_update TYPE TABLE FOR UPDATE z_r_incidents_mb,
+          lv_error            TYPE abap_bool.
+    DATA(lv_user_technical_name) = cl_abap_context_info=>get_user_technical_name( ).
 
     "Read parent record
     READ ENTITIES OF z_r_incidents_mb IN LOCAL MODE
     ENTITY Incidents
-    FIELDS ( IncUUID Status )
+    FIELDS ( IncUUID Status LocalLastChangedBy )
     WITH CORRESPONDING #( keys )
     RESULT DATA(incidents).
 
     LOOP AT incidents INTO DATA(incident).
+      CLEAR: lv_error.
 
       "Obtenemos parámetros de la entidad abstracta
       DATA(new_status) = keys[ KEY id %tky = incident-%tky ]-%param-newstatus.
@@ -103,17 +109,38 @@ CLASS lhc_Incidents IMPLEMENTATION.
       "Si el estado es PE no es posible modificarlo a CO o CL
       IF incident-Status = mcs_status-pending AND
       ( new_status =  mcs_status-completed OR new_status =  mcs_status-closed ).
-        DATA(lv_error) = abap_true.
+        lv_error = abap_true.
         "Bloqueamos la acción
         APPEND VALUE #( %tky = incident-%tky ) TO failed-incidents.
         "Mensaje
         APPEND VALUE #( %tky = incident-%tky
-                        %msg = NEW /dmo/cm_flight_messages( textid = zcm_incidents_mb=>invalid_status
-                                                                   severity = if_abap_behv_message=>severity-error )
+                 %state_area = 'VALIDATE_CHANGE_STATUS'
+                        %msg = NEW zcm_incidents_mb( textid = zcm_incidents_mb=>invalid_status
+                                                     severity = if_abap_behv_message=>severity-error )
                         %op-%action-changeStatus = if_abap_behv=>mk-on
                                                                     ) TO reported-incidents .
 
+        "Si el estado es IP sólo el user asignado puede modificar el status
+      ELSEIF   incident-Status = mcs_status-in_progress AND
+      ( lv_user_technical_name NE incident-LocalLastChangedBy AND lv_user_technical_name NE 'ADMINUSER' ) .
+        lv_error = abap_true.
+        "Bloqueamos la acción
+        APPEND VALUE #( %tky = incident-%tky ) TO failed-incidents.
+        "Mensaje
+        APPEND VALUE #( %tky = incident-%tky
+                 %state_area = 'VALIDATE_CHANGE_STATUS'
+                        %msg = NEW zcm_incidents_mb(
+                                                      textid     = zcm_incidents_mb=>incorrerct_user
+                                                      severity   = if_abap_behv_message=>severity-error
+                                                      user  = incident-LocalLastChangedBy )
+         %op-%action-changeStatus = if_abap_behv=>mk-on
+          ) TO reported-incidents .
+
+
       ENDIF.
+
+
+      CHECK lv_error IS INITIAL.
 
       " Get History ID
       SELECT SINGLE FROM zdt_inct_h_mb
@@ -140,7 +167,7 @@ CLASS lhc_Incidents IMPLEMENTATION.
 
     ENDLOOP.
 
-    CHECK lv_error IS INITIAL.
+    CHECK incident_for_update IS NOT INITIAL AND  history_for_create IS NOT INITIAL.
 
     "Actualiza DB
     MODIFY ENTITIES OF z_r_incidents_mb IN LOCAL MODE
@@ -261,7 +288,7 @@ CLASS lhc_Incidents IMPLEMENTATION.
         APPEND VALUE #( %tky = incident-%tky ) TO failed-incidents.
         APPEND VALUE #( %tky = incident-%tky
                         %state_area = 'MANDATORY'
-                               %msg = NEW /dmo/cm_flight_messages( textid = zcm_incidents_mb=>enter_title
+                               %msg = NEW zcm_incidents_mb( textid = zcm_incidents_mb=>enter_title
                                                                  severity = if_abap_behv_message=>severity-error )
                   %element-Title = if_abap_behv=>mk-on ) TO reported-incidents.
       ENDIF.
@@ -271,7 +298,7 @@ CLASS lhc_Incidents IMPLEMENTATION.
         APPEND VALUE #( %tky = incident-%tky ) TO failed-incidents.
         APPEND VALUE #( %tky = incident-%tky
                         %state_area = 'MANDATORY'
-                               %msg = NEW /dmo/cm_flight_messages( textid = zcm_incidents_mb=>enter_Description
+                               %msg = NEW zcm_incidents_mb( textid = zcm_incidents_mb=>enter_Description
                                                                  severity = if_abap_behv_message=>severity-error )
                   %element-Description = if_abap_behv=>mk-on ) TO reported-incidents.
       ENDIF.
@@ -281,7 +308,7 @@ CLASS lhc_Incidents IMPLEMENTATION.
         APPEND VALUE #( %tky = incident-%tky ) TO failed-incidents.
         APPEND VALUE #( %tky = incident-%tky
                         %state_area = 'MANDATORY'
-                               %msg = NEW /dmo/cm_flight_messages( textid = zcm_incidents_mb=>enter_Priority
+                               %msg = NEW zcm_incidents_mb( textid = zcm_incidents_mb=>enter_Priority
                                                                  severity = if_abap_behv_message=>severity-error )
                   %element-Priority = if_abap_behv=>mk-on ) TO reported-incidents.
 
@@ -295,7 +322,7 @@ CLASS lhc_Incidents IMPLEMENTATION.
           APPEND VALUE #( %tky = incident-%tky ) TO failed-incidents.
           APPEND VALUE #( %tky = incident-%tky
                           %state_area = 'MANDATORY'
-                                 %msg = NEW /dmo/cm_flight_messages( textid = zcm_incidents_mb=>invalid_priority
+                                 %msg = NEW zcm_incidents_mb( textid = zcm_incidents_mb=>invalid_priority
                                                                    severity = if_abap_behv_message=>severity-error )
                     %element-Priority = if_abap_behv=>mk-on ) TO reported-incidents.
         ENDIF.
@@ -304,5 +331,38 @@ CLASS lhc_Incidents IMPLEMENTATION.
 
     ENDLOOP.
   ENDMETHOD.
+
+
+
+  METHOD validateDates.
+    "Read Entity
+    READ ENTITIES OF z_r_incidents_mb IN LOCAL MODE
+    ENTITY Incidents
+    FIELDS ( CreationDate ChangedDate )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(incidents).
+
+    DELETE incidents WHERE ChangedDate IS INITIAL.
+
+    LOOP AT incidents INTO DATA(incident).
+
+      IF incident-CreationDate > incident-ChangedDate.
+        "Bloqueamos el estado transaccional
+        APPEND VALUE #( %tky = incident-%tky ) TO failed-incidents.
+        "Informamos por mensaje
+        APPEND VALUE #( %tky = incident-%tky
+                     %state_area = 'VALIDATE_DATES'
+                            %msg = NEW zcm_incidents_mb( textid = zcm_incidents_mb=>begin_date_bef_end_date
+                                                               begin_date = incident-CreationDate
+                                                               end_date = incident-ChangedDate
+                                                                severity = if_abap_behv_message=>severity-error )
+                            %element-ChangedDate = if_abap_behv=>mk-on
+                            %element-CreationDate = if_abap_behv=>mk-on ) TO reported-incidents.
+
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
+
 
 ENDCLASS.

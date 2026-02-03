@@ -25,16 +25,19 @@ authorization master ( global, instance )
   action ( features : instance, authorization : update ) changeStatus parameter ZAE_STATUS_OBSERVATION_MB result [1] $self;
 
   validation validateMandatory on save { create; field title, description, priority; }
+  validation validateDates on save { create; field CreationDate, ChangedDate; }
+
 
   determination createHistory on save { create; }
   determination setvalues on modify { create; }
 
   determine action validateMandatoryFields { validation validateMandatory; }
-
+  determine action validateDateFields { validation validateDates; }
   side effects
   {
     action changeStatus affects $self;
     determine action validateMandatoryFields executed on field title, field description, field priority affects messages;
+    determine action validateDateFields executed on field CreationDate, field ChangedDate affects messages;
   }
   draft action Resume;
   draft action Edit;

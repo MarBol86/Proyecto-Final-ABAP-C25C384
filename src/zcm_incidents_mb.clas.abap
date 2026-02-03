@@ -55,24 +55,49 @@ CLASS zcm_incidents_mb DEFINITION
                  attr3 TYPE scx_attrname VALUE '',
                  attr4 TYPE scx_attrname VALUE '',
                END OF invalid_status.
+    CONSTANTS: BEGIN OF begin_date_bef_end_date,
+                 msgid TYPE symsgid VALUE gc_msgid,
+                 msgno TYPE symsgno VALUE '006',
+                 attr1 TYPE scx_attrname VALUE 'MV_BEGIN_DATE',
+                 attr2 TYPE scx_attrname VALUE 'MV_END_DATE',
+                 attr3 TYPE scx_attrname VALUE '',
+                 attr4 TYPE scx_attrname VALUE '',
+               END OF begin_date_bef_end_date.
+
+    CONSTANTS: BEGIN OF incorrerct_user,
+                 msgid TYPE symsgid VALUE gc_msgid,
+                 msgno TYPE symsgno VALUE '007',
+                 attr1 TYPE scx_attrname VALUE 'MV_USER',
+                 attr2 TYPE scx_attrname VALUE '',
+                 attr3 TYPE scx_attrname VALUE '',
+                 attr4 TYPE scx_attrname VALUE '',
+               END OF  incorrerct_user.
 
     METHODS constructor
       IMPORTING
-        textid   TYPE scx_t100key OPTIONAL
-        attr1    TYPE string OPTIONAL
-        attr2    TYPE string OPTIONAL
-        attr3    TYPE string OPTIONAL
-        attr4    TYPE string OPTIONAL
-        previous LIKE previous OPTIONAL
-        severity TYPE if_abap_behv_message~t_severity OPTIONAL.
+        textid     TYPE scx_t100key OPTIONAL
+        attr1      TYPE string OPTIONAL
+        attr2      TYPE string OPTIONAL
+        attr3      TYPE string OPTIONAL
+        attr4      TYPE string OPTIONAL
+        previous   LIKE previous OPTIONAL
+        severity   TYPE if_abap_behv_message~t_severity OPTIONAL
+        begin_date TYPE /dmo/begin_date OPTIONAL
+        end_date   TYPE /dmo/end_date OPTIONAL
+        user       TYPE  syuname OPTIONAL.
+
+    DATA: mv_attr1      TYPE string,
+          mv_attr2      TYPE string,
+          mv_attr3      TYPE string,
+          mv_attr4      TYPE string,
+          mv_begin_date TYPE /dmo/begin_date,
+          mv_end_date   TYPE /dmo/end_date,
+          mv_user       TYPE syuname.
+
 
   PROTECTED SECTION.
   PRIVATE SECTION.
 
-    DATA: mv_attr1 TYPE string,
-          mv_attr2 TYPE string,
-          mv_attr3 TYPE string,
-          mv_attr4 TYPE string.
 
 ENDCLASS.
 
@@ -87,6 +112,9 @@ CLASS zcm_incidents_mb IMPLEMENTATION.
     me->mv_attr2 = attr2.
     me->mv_attr3 = attr3.
     me->mv_attr4 = attr4.
+    me->mv_begin_date = begin_date.
+    me->mv_end_date   = end_date.
+    me->mv_user      = user.
 
     if_abap_behv_message~m_severity = severity.
 

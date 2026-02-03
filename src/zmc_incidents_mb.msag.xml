@@ -42,7 +42,13 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZMC_INCIDENTS_MB</ARBGB>
      <MSGNR>006</MSGNR>
-     <TEXT>Status: Cancelled, Completed or Closed cannot be modified</TEXT>
+     <TEXT>Created Date &amp;1 must not be after Changed Date &amp;2 .</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZMC_INCIDENTS_MB</ARBGB>
+     <MSGNR>007</MSGNR>
+     <TEXT>Only the user &amp;1 or the administrator can modify the status</TEXT>
     </T100>
    </T100>
   </asx:values>

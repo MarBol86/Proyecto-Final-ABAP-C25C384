@@ -10,6 +10,7 @@ define behavior for Z_C_INCIDENTS_MB alias Incidents
 
   use action changeStatus;
   use action validateMandatoryFields;
+  use action validateDateFields;
 
   use action Resume;
   use action Edit;
