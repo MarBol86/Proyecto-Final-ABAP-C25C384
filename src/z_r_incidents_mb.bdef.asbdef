@@ -45,6 +45,8 @@ authorization master ( global, instance )
   draft action Discard;
   draft determine action Prepare
   {
+  validation validateMandatory;
+  validation validateDates;
   }
 
   mapping for zdt_inct_mb
